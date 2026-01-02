@@ -141,8 +141,12 @@ function toggleLoop() {
 
 async function fetchTitle(videoId) {
   try {
-    const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+    );
     const data = await res.json();
+    videoTitles[videoId] = data.title;
+    renderPlaylist(); // 👈 force update when title arrives
     return data.title;
   } catch {
     return videoId;
