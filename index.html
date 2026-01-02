@@ -116,13 +116,13 @@ You can name a playlist by writing text before the first link."></textarea>
 
 <script>
 let playlists = JSON.parse(localStorage.getItem("playlists") || "[]");
-
+const videoTitles = JSON.parse(localStorage.getItem("videoTitles") || "{}");
+  
 function savePlaylists() {
   localStorage.setItem("playlists", JSON.stringify(playlists));
 }
 
 const videoIds = [];
-const videoTitles = {};
 const dummyVideoId = "dQw4w9WgXcQ";
 const addDummy = true;
 let loop = false;
@@ -145,8 +145,11 @@ async function fetchTitle(videoId) {
       `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
     );
     const data = await res.json();
+
     videoTitles[videoId] = data.title;
-    renderPlaylist(); // 👈 force update when title arrives
+    localStorage.setItem("videoTitles", JSON.stringify(videoTitles)); // 💾 cache
+    renderPlaylist();
+
     return data.title;
   } catch {
     return videoId;
