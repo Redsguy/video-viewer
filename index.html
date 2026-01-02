@@ -10,7 +10,7 @@
 body { font-family: 'Segoe UI', sans-serif; background: #f4f4f8; margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
 h1 { color: #333; margin-bottom: 1rem; }
 .container { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 700px; width: 100%; position: relative; }
-textarea { width: 100%; padding: 0.8rem; font-size: 1rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 6px; resize: vertical; height: 150px; }
+textarea { width: 100%; padding: 0.8rem; font-size: 1rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 6px; resize: vertical; height: 150px; box-sizing: border-box;}
 button { background-color: #cc0000; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; margin: 0.3rem; transition: background-color 0.3s ease; }
 button:hover { background-color: #e60000; }
 .info-button, .playlist-button { position: absolute; top: 1rem; width: 28px; height: 28px; border-radius: 50%; color: white; font-weight: bold; border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
@@ -51,7 +51,7 @@ li { background: #eee; padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.3re
 .arrow-btn { background:#0078d7; border:none; font-weight:bold; cursor:pointer; font-size:16px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; margin:1px 0; color:white; }
 .arrow-container { display:flex; flex-direction:column; margin-right:6px; }
 #progress-indicator { margin-top:0.5rem; font-size:0.9rem; color:#333; min-height:1.2rem; transition: color 0.3s ease; }
-#search-input { width: 100%; padding: 0.5rem; margin-top: 0.8rem; border-radius: 6px; border: 1px solid #ccc; }
+#search-input { width: 100%; padding: 0.5rem; margin-top: 0.8rem; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;}
 .playlist-popup button span { color: black; font-weight: 500; text-align: left; }
 </style>
 </head>
