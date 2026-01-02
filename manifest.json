@@ -1,21 +1,22 @@
 ﻿{
   "name": "YouTube Playlist App",
-  "short_name": "YT Playlists",
+  "short_name": "Playlist Maker",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f4f8",
   "theme_color": "#cc0000",
   "icons": [
     {
-      "src": "playlistMaker192.png",
+      "src": "/video-viewer/playlistMaker192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "playlistMaker512.png",
+      "src": "/video-viewer/playlistMaker512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
 
 }
+
