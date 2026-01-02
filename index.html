@@ -110,6 +110,7 @@ You can name a playlist by writing text before the first link."></textarea>
       <input type="file" id="loadPlaylistFile" style="display:none" onchange="loadPlaylist(event)">
       <button onclick="document.getElementById('loadPlaylistFile').click()">Load</button>
       <button onclick="showPlaylistChooser()">Switch Playlist</button>
+      <button onclick="clearCache()">Clear Cache</button>
     </div>
   </div>
 </div>
@@ -120,6 +121,16 @@ const videoTitles = JSON.parse(localStorage.getItem("videoTitles") || "{}");
   
 function savePlaylists() {
   localStorage.setItem("playlists", JSON.stringify(playlists));
+}
+
+function clearCache() {
+  if (!confirm("Clear cached video titles? This won’t delete playlists.")) return;
+
+  localStorage.removeItem("videoTitles");
+  Object.keys(videoTitles).forEach(k => delete videoTitles[k]);
+
+  renderPlaylist();
+  alert("Cached titles cleared.");
 }
 
 const videoIds = [];
