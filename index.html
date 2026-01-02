@@ -42,10 +42,12 @@ li { background: #eee; padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.3re
 
 .playlist-grid {
   display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat(4, auto);
+  grid-auto-flow: row; 
+  grid-template-rows: none; 
   gap: 12px;
   align-items: start;
+  max-height: 80vh; 
+  overflow-y: auto;  
 }
 
 .arrow-btn { background:#0078d7; border:none; font-weight:bold; cursor:pointer; font-size:16px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; margin:1px 0; color:white; }
@@ -155,7 +157,6 @@ async function addToPlaylist() {
 
   const hasMultiple = text.includes('---');
 
-  // If NO --- → append to current playlist (videoIds)
   if (!hasMultiple) {
     const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
     let added = 0;
@@ -178,10 +179,10 @@ async function addToPlaylist() {
     }
 
     document.getElementById("video-url").value = "";
-    return;  // ✔ STOP HERE — do not create playlists
+    return; 
   }
 
-  // If --- IS present → build multiple playlists
+
   const groups = text.split(/\n-{3,}\n?/);
   let playlistsAdded = 0;
 
@@ -198,7 +199,7 @@ async function addToPlaylist() {
         groupIds.push(vid);
         if (!videoTitles[vid]) videoTitles[vid] = await fetchTitle(vid);
       } else if (!groupIds.length && line.length > 0) {
-        groupName = line; // playlist name
+        groupName = line; 
       }
     }
 
@@ -217,7 +218,6 @@ async function addToPlaylist() {
 
   indicator.textContent = `Added ${playlistsAdded} playlist(s).`;
 
-  // ⭐ Auto-open playlist chooser
   showPlaylistChooser();
 
   document.getElementById("video-url").value = "";
@@ -297,21 +297,17 @@ function showPlaylistChooser() {
   playAllBtn.style.borderRadius = "6px";
   playAllBtn.style.marginTop = "1rem";
   playAllBtn.onclick = () => {
-    // Flatten all video IDs from all playlists
+    
     const allVideos = playlists.flatMap(group => group.ids);
 
-    // Remove duplicates by converting the array to a Set and back to an array
     const uniqueVideos = [...new Set(allVideos)];
-
-    // Clear the current videoIds array and add the unique video IDs
+    
     videoIds.length = 0;
     videoIds.push(...uniqueVideos);
 
-    // Render the playlist and start playing
     renderPlaylist();
     startPlaylist();
     
-    // Close the overlay
     document.body.removeChild(overlay);
   };
 
