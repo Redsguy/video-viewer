@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Player</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#cc0000">
+<style>
+body{font-family:'Segoe UI',sans-serif;background:#f4f4f8;margin:0;padding:2rem;display:flex;flex-direction:column;align-items:center}
+h1{color:#333;margin-bottom:1rem}
+.container{background:white;padding:2rem;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.1);max-width:700px;width:100%;position:relative}
+textarea{width:100%;padding:.8rem;font-size:1rem;margin-bottom:1rem;border:1px solid #ccc;border-radius:6px;height:150px}
+button{background:#cc0000;color:white;padding:.6rem 1rem;border:none;border-radius:6px;font-size:1rem;cursor:pointer;margin:.3rem}
+button:hover{background:#e60000}
+.info-button,.playlist-button{position:absolute;top:1rem;width:28px;height:28px;border-radius:50%;color:white;font-weight:bold;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.info-button{right:1rem;background:#0078d7}
+.playlist-button{right:4rem;background:#555}
+.video-container{margin-top:2rem;position:relative;width:100%;padding-bottom:56.25%;height:0}
+.video-container iframe{position:absolute;width:100%;height:100%;border:none}
+ul{list-style:none;padding:0;margin-top:.5rem}
+li{background:#eee;padding:.4rem .6rem;border-radius:6px;margin:.3rem 0;font-size:.95rem;display:flex;align-items:center;gap:.5rem}
+.thumbnail{width:80px;height:60px;object-fit:cover;border-radius:4px}
+.video-info{display:flex;align-items:center;gap:.8rem;flex-grow:1;text-decoration:none;color:#333}
+.video-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arrow-btn{background:#0078d7;border:none;font-size:16px;width:32px;height:32px;color:white;cursor:pointer}
+.arrow-container{display:flex;flex-direction:column}
+.delete-btn{background:none;border:none;color:#cc0000;font-size:18px;cursor:pointer}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
+.playlist-popup{background:white;padding:1.5rem;border-radius:10px;width:90%;max-width:600px}
+.playlist-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(4,auto);gap:12px}
+</style>
+</head>
+
+<body>
+<h1>YouTube Player</h1>
+
+<div class="container">
+<button class="playlist-button" onclick="openPlaylistMenu()">≡</button>
+<button class="info-button" onclick="openInfo()">i</button>
+
+<div id="video" class="video-container" style="display:none"></div>
+
+<textarea id="video-url" placeholder="Paste YouTube URLs here... Use --- to separate playlists."></textarea>
+
+<button onclick="addToPlaylist()">Add to Playlist</button>
+
+<div>
+<button id="loopBtn" onclick="toggleLoop()">Loop: Off</button>
+<button onclick="shufflePlaylist()">Shuffle</button>
+<button onclick="startPlaylist()">Build Playlist</button>
+</div>
+
+<ul id="playlist"></ul>
+</div>
+
+<div class="overlay" id="playlistOverlay">
+<div class="playlist-popup">
+<button onclick="closePlaylistMenu()">✖</button>
+<h2>Select Playlist</h2>
+<div id="playlistGrid" class="playlist-grid"></div>
+</div>
+</div>
+
+<script>
+const STORAGE_KEY="yt-pwa-playlists"
+const videoIds=[]
+const videoTitles={}
+const playlists=[]
+let currentPlaylistIndex=0
+let loop=false
+
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify({playlists,videoTitles,currentPlaylistIndex,loop}))}
+function loadState(){const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return;try{const s=JSON.parse(raw);playlists.splice(0,playlists.length,...(s.playlists||[]));Object.assign(videoTitles,s.videoTitles||{});currentPlaylistIndex=s.currentPlaylistIndex||0;loop=!!s.loop;document.getElementById("loopBtn").textContent=`Loop: ${loop?"On":"Off"}`;if(playlists.length)loadPlaylistGroup(currentPlaylistIndex)}catch{}}
+
+function toggleLoop(){loop=!loop;document.getElementById("loopBtn").textContent=`Loop: ${loop?"On":"Off"}`;saveState()}
+async function fetchTitle(id){try{const r=await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);return(await r.json()).title}catch{return id}}
+
+async function addToPlaylist(){const text=videoUrl.value.trim();if(!text)return;if(!text.includes("---")){for(const l of text.split("\n")){const m=l.match(/(?:v=|youtu\.be\/)([\w-]{11})/);if(m){videoIds.push(m[1]);if(!videoTitles[m[1]])videoTitles[m[1]]=await fetchTitle(m[1])}}renderPlaylist();saveState();videoUrl.value="";return}for(const g of text.split(/\n-{3,}\n?/)){const ids=[];let name="";for(const l of g.split("\n")){const m=l.match(/(?:v=|youtu\.be\/)([\w-]{11})/);if(m)ids.push(m[1]);else if(!ids.length)name=l}if(ids.length)playlists.push({name,ids})}saveState();showPlaylistChooser();videoUrl.value=""}
+
+function loadPlaylistGroup(i){currentPlaylistIndex=i;videoIds.length=0;videoIds.push(...playlists[i].ids);renderPlaylist();saveState()}
+
+function renderPlaylist(){playlist.innerHTML="";videoIds.forEach((id,i)=>{const li=document.createElement("li");const arrows=document.createElement("div");arrows.className="arrow-container";const up=document.createElement("button");up.className="arrow-btn";up.textContent="▲";up.onclick=()=>{if(i>0){[videoIds[i-1],videoIds[i]]=[videoIds[i],videoIds[i-1]];renderPlaylist();saveState()}};const down=document.createElement("button");down.className="arrow-btn";down.textContent="▼";down.onclick=()=>{if(i<videoIds.length-1){[videoIds[i+1],videoIds[i]]=[videoIds[i],videoIds[i+1]];renderPlaylist();saveState()}};arrows.append(up,down);const a=document.createElement("a");a.className="video-info";a.href=`https://www.youtube.com/watch?v=${id}`;a.target="_blank";const img=document.createElement("img");img.src=`https://img.youtube.com/vi/${id}/default.jpg`;img.className="thumbnail";const span=document.createElement("span");span.className="video-title";span.textContent=videoTitles[id]||id;a.append(img,span);const del=document.createElement("button");del.className="delete-btn";del.textContent="✖";del.onclick=()=>{videoIds.splice(i,1);renderPlaylist();saveState()};li.append(arrows,a,del);playlist.appendChild(li)})}
+
+function startPlaylist(){if(!videoIds.length)return;video.style.display="block";video.innerHTML=`<iframe src="https://www.youtube.com/embed/${videoIds[0]}?autoplay=1&playlist=${videoIds.slice(1).join(",")}&loop=${loop?1:0}" allowfullscreen></iframe>`}
+
+function shufflePlaylist(){for(let i=videoIds.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[videoIds[i],videoIds[j]]=[videoIds[j],videoIds[i]]}renderPlaylist();saveState()}
+
+function showPlaylistChooser(){playlistGrid.innerHTML="";playlistOverlay.style.display="flex";playlists.forEach((p,i)=>{const b=document.createElement("button");b.textContent=p.name||videoTitles[p.ids[0]]||"Playlist";b.onclick=()=>{loadPlaylistGroup(i);closePlaylistMenu()};playlistGrid.appendChild(b)})}
+
+function openPlaylistMenu(){showPlaylistChooser()}
+function closePlaylistMenu(){playlistOverlay.style.display="none"}
+function openInfo(){}
+window.addEventListener("load",loadState)
+
+if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').then(()=>console.log('Service Worker registered')).catch(err=>console.warn('SW registration failed',err))}
+</script>
+</body>
+</html>
