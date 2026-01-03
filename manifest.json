@@ -5,6 +5,7 @@
   "display": "standalone",
   "background_color": "#f4f4f8",
   "theme_color": "#cc0000",
+  "orientation": "portrait"
   "icons": [
     {
       "src": "/video-viewer/playlistMaker192.png",
@@ -19,4 +20,5 @@
   ]
 
 }
+
 
