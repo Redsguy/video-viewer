@@ -6,7 +6,7 @@
   <title>YouTube Player</title>
   <link rel="apple-touch-icon" href="playlistMaker512.png">
   <link rel="manifest" href="manifest.json">
-  <script src="sw.js" defer></script>
+  
 <style>
 button, a {touch-action: manipulation;}
 body { font-family: 'Segoe UI', sans-serif; background: #f4f4f8; margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; }
@@ -41,6 +41,11 @@ li { background: #eee; padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.3re
 .close-popup:hover { color:#000; }
 .delete-btn { background:none; border:none; color:#cc0000; font-weight:bold; cursor:pointer; font-size:18px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; position:absolute; top:50%; right:10px; transform:translateY(-50%); transition:color 0.2s; }
 .delete-btn:hover { color:#e60000; }
+  li button {
+  width: 100%;
+  font-weight: 600;
+}
+
 
 .playlist-grid {
   display: grid;
@@ -117,6 +122,11 @@ You can name a playlist by writing text before the first link."></textarea>
 </div>
 
 <script>
+
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
 let playlists = JSON.parse(localStorage.getItem("playlists") || "[]");
 const videoTitles = JSON.parse(localStorage.getItem("videoTitles") || "{}");
   
@@ -333,63 +343,80 @@ function renderPlaylist() {
   ul.innerHTML = "";
 
   videoIds.forEach((id, index) => {
-    const li = document.createElement("li");
+  const li = document.createElement("li");
 
-    const arrowDiv = document.createElement("div");
-    arrowDiv.className = "arrow-container";
+  const arrowDiv = document.createElement("div");
+  arrowDiv.className = "arrow-container";
 
-    const up = document.createElement("button");
-    up.textContent = "▲";
-    up.className = "arrow-btn";
-    up.onclick = () => {
-      if (index > 0) {
-        [videoIds[index - 1], videoIds[index]] = [videoIds[index], videoIds[index - 1]];
-        renderPlaylist();
-      }
-    };
+  const up = document.createElement("button");
+  up.textContent = "▲";
+  up.className = "arrow-btn";
+  up.onclick = () => {
+    if (index > 0) {
+      [videoIds[index - 1], videoIds[index]] =
+      [videoIds[index], videoIds[index - 1]];
+      renderPlaylist();
+    }
+  };
 
-    const down = document.createElement("button");
-    down.textContent = "▼";
-    down.className = "arrow-btn";
-    down.onclick = () => {
-      if (index < videoIds.length - 1) {
-        [videoIds[index + 1], videoIds[index]] = [videoIds[index], videoIds[index + 1]];
-        renderPlaylist();
-      }
-    };
+  const down = document.createElement("button");
+  down.textContent = "▼";
+  down.className = "arrow-btn";
+  down.onclick = () => {
+    if (index < videoIds.length - 1) {
+      [videoIds[index + 1], videoIds[index]] =
+      [videoIds[index], videoIds[index + 1]];
+      renderPlaylist();
+    }
+  };
 
-    arrowDiv.appendChild(up);
-    arrowDiv.appendChild(down);
-    li.appendChild(arrowDiv);
+  arrowDiv.appendChild(up);
+  arrowDiv.appendChild(down);
+  li.appendChild(arrowDiv);
 
-    const a = document.createElement("a");
-    a.href = `https://www.youtube.com/watch?v=${id}`;
-    a.target = "_blank";
-    a.className = "video-info";
+  const a = document.createElement("a");
+  a.href = `https://www.youtube.com/watch?v=${id}`;
+  a.target = "_blank";
+  a.className = "video-info";
 
-    const img = document.createElement("img");
-    img.src = `https://img.youtube.com/vi/${id}/default.jpg`;
-    img.className = "thumbnail";
+  const img = document.createElement("img");
+  img.src = `https://img.youtube.com/vi/${id}/default.jpg`;
+  img.className = "thumbnail";
 
-    const span = document.createElement("span");
-    span.textContent = videoTitles[id] || `Video: ${id}`;
-    span.className = "video-title";
+  const span = document.createElement("span");
+  span.textContent = videoTitles[id] || `Video: ${id}`;
+  span.className = "video-title";
 
-    a.appendChild(img);
-    a.appendChild(span);
-    li.appendChild(a);
+  a.appendChild(img);
+  a.appendChild(span);
+  li.appendChild(a);
 
-    const del = document.createElement("button");
-    del.textContent = "✖";
-    del.className = "delete-btn";
-    del.onclick = () => {
-  videoIds.splice(index, 1);
-  renderPlaylist();
-};
+  const del = document.createElement("button");
+  del.textContent = "✖";
+  del.className = "delete-btn";
+  del.onclick = () => {
+    videoIds.splice(index, 1);
+    renderPlaylist();
+  };
 
-    li.appendChild(del);
-    ul.appendChild(li);
-  });
+  li.appendChild(del);
+  ul.appendChild(li);
+});
+  
+if (playlists[currentPlaylistIndex]) {
+  const li = document.createElement("li");
+  li.style.justifyContent = "center";
+  li.style.background = "#ddd";
+
+  const btn = document.createElement("button");
+  btn.textContent = "➕ Add a video";
+  btn.style.background = "#0078d7";
+
+  btn.onclick = addVideoToCurrentPlaylist;
+
+  li.appendChild(btn);
+  ul.appendChild(li);
+}
 }
 
 function startPlaylist() {
@@ -456,6 +483,35 @@ document.getElementById("search-input").addEventListener("input", e => {
     li.style.display = title.includes(val) ? "" : "none";
   });
 });
+  async function addVideoToCurrentPlaylist() {
+  const url = prompt("Paste a YouTube link:");
+  if (!url) return;
+
+  const match = url.match(/(?:v=|youtu\.be\/)([\w-]{11})/);
+  if (!match) {
+    alert("Invalid YouTube link");
+    return;
+  }
+
+  const vid = match[1];
+
+  if (videoIds.includes(vid)) {
+    alert("That video is already in this playlist");
+    return;
+  }
+
+  videoIds.push(vid);
+
+  if (!videoTitles[vid]) {
+    videoTitles[vid] = await fetchTitle(vid);
+  }
+
+  playlists[currentPlaylistIndex].ids.push(vid);
+  savePlaylists();
+
+  renderPlaylist();
+}
+
 </script>
 
 </body>
