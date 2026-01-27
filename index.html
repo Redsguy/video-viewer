@@ -67,7 +67,6 @@ button:hover {
   background-color: #e60000;
 }
 
-/* TOP RIGHT BUTTONS */
 .info-button,
 .playlist-button {
   position: absolute;
@@ -119,7 +118,6 @@ button:hover {
   background-color: #e60000;
 }
 
-/* VIDEO PLAYER */
 .video-container {
   margin-top: 2rem;
   position: relative;
@@ -135,7 +133,6 @@ button:hover {
   border: none;
 }
 
-/* PLAYLIST BUILDER */
 .playlist-builder {
   margin-top: 2rem;
   position: relative;
@@ -198,7 +195,6 @@ li {
   background-color: #008000;
 }
 
-/* OVERLAY + POPUPS */
 .overlay {
   position: fixed;
   inset: 0;
@@ -234,7 +230,6 @@ li {
   color: #888;
 }
 
-/* DELETE VIDEO BUTTON */
 .delete-btn {
   background: none;
   border: none;
@@ -300,7 +295,6 @@ li {
 
   <div id="video" class="video-container" style="display:none;"></div>
   <div id="video-controls">
-    <span id="video-counter">0 / 0</span>
   </div>
 
   <div class="playlist-builder">
@@ -673,7 +667,6 @@ function startPlaylist() {
   videoDiv.appendChild(iframe);
 
   document.getElementById("video-controls").style.display = "block";
-  document.getElementById("video-counter").textContent = `1 / ${playlistToPlay.length - 1}`;
 }
 
 function shufflePlaylist() {
