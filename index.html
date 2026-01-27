@@ -20,6 +20,23 @@ button:hover { background-color: #e60000; }
 .info-button:hover { background-color: #005fa3; }
 .playlist-button { right: 4rem; background-color: #555; }
 .playlist-button:hover { background-color: #333; }
+.delete-playlist-button {
+  position: absolute;
+  top: 1rem;
+  right: 7rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #cc0000;
+  color: white;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+.delete-playlist-button:hover {
+  background-color: #e60000;
+}
+
 .video-container { margin-top: 2rem; position: relative; width: 100%; padding-bottom: 56.25%; height: 0; }
 .video-container iframe { position: absolute; width: 100%; height: 100%; border: none; }
 .playlist-builder { margin-top: 2rem; position: relative; }
@@ -67,6 +84,7 @@ li { background: #eee; padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.3re
 <body>
 <h1>YouTube Player</h1>
 <div class="container">
+  <button class="delete-playlist-button" onclick="openDeletePlaylistMenu()">🗑️</button>
   <button class="playlist-button" onclick="openPlaylistMenu()">≡</button>
   <button class="info-button" onclick="openInfo()">i</button>
 
@@ -126,6 +144,9 @@ You can name a playlist by writing text before the first link."></textarea>
   if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
+
+let deletePlaylistIndex = null;
+let deleteWorkingCopy = [];
 
 let playlists = JSON.parse(localStorage.getItem("playlists") || "[]");
 const videoTitles = JSON.parse(localStorage.getItem("videoTitles") || "{}");
@@ -298,6 +319,9 @@ function showPlaylistChooser() {
       e.stopPropagation();
       playlists.splice(i, 1);
       savePlaylists();
+      if (currentPlaylistIndex >= playlists.length) {
+  currentPlaylistIndex = playlists.length - 1;
+}
       document.body.removeChild(overlay);
       showPlaylistChooser();
     };
@@ -451,30 +475,87 @@ function shufflePlaylist() {
 }
 
 function downloadPlaylist() {
-  if (videoIds.length === 0) {
-    alert("No videos to download");
+  if (playlists.length === 0) {
+    alert("No playlists to download");
     return;
   }
-  const blob = new Blob([videoIds.join("\n")], { type: "text/plain" });
+
+  let output = "";
+
+  playlists.forEach((pl, index) => {
+    if (pl.name) {
+      output += pl.name + "\n";
+    }
+
+    pl.ids.forEach(id => {
+      output += `https://www.youtube.com/watch?v=${id}\n`;
+    });
+
+    if (index < playlists.length - 1) {
+      output += "---\n";
+    }
+  });
+
+  const blob = new Blob([output.trim()], { type: "text/plain" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "playlist.txt";
+  a.download = "playlists.txt";
   a.click();
 }
+
 
 function loadPlaylist(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = e => {
-    const lines = e.target.result.split("\n").map(l => l.trim()).filter(Boolean);
-    videoIds.length = 0;
-    lines.forEach(id => videoIds.push(id));
-    renderPlaylist();
+
+  reader.onload = async e => {
+    const text = e.target.result.trim();
+    if (!text) return;
+
+    playlists = [];
+
+    const groups = text.split(/\n-{3,}\n?/);
+
+    for (const group of groups) {
+      const lines = group.split("\n").map(l => l.trim()).filter(Boolean);
+
+      let name = "";
+      const ids = [];
+
+      for (const line of lines) {
+        const match = line.match(/(?:v=|youtu\.be\/)([\w-]{11})/);
+        if (match) {
+          const vid = match[1];
+          ids.push(vid);
+
+          if (!videoTitles[vid]) {
+            videoTitles[vid] = await fetchTitle(vid);
+          }
+        } else if (!ids.length) {
+          name = line;
+        }
+      }
+
+      if (ids.length > 0) {
+        playlists.push({ name: name || null, ids });
+      }
+    }
+
+    savePlaylists();
+    currentPlaylistIndex = 0;
+
+    if (playlists.length > 0) {
+      loadPlaylistGroup(0);
+    }
+
+    alert("Playlists loaded successfully!");
   };
+
   reader.readAsText(file);
 }
+
 
 document.getElementById("search-input").addEventListener("input", e => {
   const val = e.target.value.toLowerCase();
@@ -512,8 +593,91 @@ document.getElementById("search-input").addEventListener("input", e => {
   renderPlaylist();
 }
 
+function openDeletePlaylistMenu() {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+  overlay.style.display = "flex";
+
+  const popup = document.createElement("div");
+  popup.className = "playlist-popup";
+  popup.innerHTML = `
+    <button class="close-popup">✖</button>
+    <h2>Select Playlist to Edit</h2>
+  `;
+
+  playlists.forEach((pl, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = pl.name || "Untitled Playlist";
+    btn.onclick = () => {
+      deletePlaylistIndex = i;
+      deleteWorkingCopy = [...pl.ids];
+      document.body.removeChild(overlay);
+      openDeleteEditor();
+    };
+    popup.appendChild(btn);
+  });
+
+  popup.querySelector(".close-popup").onclick = () =>
+    document.body.removeChild(overlay);
+
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+}
+  
+function openDeleteEditor() {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+  overlay.style.display = "flex";
+
+  const popup = document.createElement("div");
+  popup.className = "playlist-popup";
+  popup.innerHTML = `
+    <button class="close-popup">✖</button>
+    <h2>Edit Playlist</h2>
+    <ul id="delete-list"></ul>
+    <button id="save-delete">Save Changes</button>
+  `;
+
+  const ul = popup.querySelector("#delete-list");
+
+  deleteWorkingCopy.forEach((id, index) => {
+    const li = document.createElement("li");
+
+    const title = document.createElement("span");
+    title.textContent = videoTitles[id] || id;
+    title.style.flex = "1";
+
+    const del = document.createElement("button");
+    del.textContent = "✖";
+    del.className = "delete-btn";
+    del.onclick = () => {
+      deleteWorkingCopy.splice(index, 1);
+      openDeleteEditor(); // re-render
+      document.body.removeChild(overlay);
+    };
+
+    li.appendChild(title);
+    li.appendChild(del);
+    ul.appendChild(li);
+  });
+
+  popup.querySelector("#save-delete").onclick = () => {
+    playlists[deletePlaylistIndex].ids = [...deleteWorkingCopy];
+    savePlaylists();
+    alert("Playlist updated!");
+    document.body.removeChild(overlay);
+    renderPlaylist(); // refresh current view if needed
+  };
+
+  popup.querySelector(".close-popup").onclick = () =>
+    document.body.removeChild(overlay);
+
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+}
+
+
 </script>
 
 </body>
 </html>
-
