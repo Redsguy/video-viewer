@@ -15,7 +15,7 @@ h1 { color: #333; margin-bottom: 1rem; }
 textarea { width: 100%; padding: 0.8rem; font-size: 1rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 6px; resize: vertical; height: 150px; box-sizing: border-box;}
 button { background-color: #cc0000; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; margin: 0.3rem; transition: background-color 0.3s ease; }
 button:hover { background-color: #e60000; }
-.info-button, .playlist-button { position: absolute; top: 1rem; width: 28px; height: 28px; border-radius: 50%; color: white; font-weight: bold; border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
+.info-button, .playlist-button, .rename-button, .delete-button { position: absolute; top: 1rem; width: 28px; height: 28px; border-radius: 50%; color: white; font-weight: bold; border: none; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
 .info-button { right: 1rem; background-color: #0078d7; }
 .info-button:hover { background-color: #005fa3; }
 .playlist-button { right: 4rem; background-color: #555; }
@@ -56,6 +56,21 @@ li { background: #eee; padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.3re
   max-height: 80vh; 
   overflow-y: auto;  
 }
+.rename-button {
+  right: 7rem;
+  background-color: #28a745;
+}
+.rename-button:hover {
+  background-color: #1e7e34;
+}
+
+.delete-button {
+  right: 10rem;
+  background-color: #cc0000;
+}
+.delete-button:hover {
+  background-color: #a80000;
+}
 
 .arrow-btn { background:#0078d7; border:none; font-weight:bold; cursor:pointer; font-size:16px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; margin:1px 0; color:white; }
 .arrow-container { display:flex; flex-direction:column; margin-right:6px; }
@@ -67,6 +82,8 @@ li { background: #eee; padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.3re
 <body>
 <h1>YouTube Player</h1>
 <div class="container">
+  <button class="delete-button" onclick="openDeleteMenu()">🗑</button>
+  <button class="rename-button" onclick="renameCurrentPlaylist()">✏️</button>
   <button class="playlist-button" onclick="openPlaylistMenu()">≡</button>
   <button class="info-button" onclick="openInfo()">i</button>
 
@@ -118,6 +135,14 @@ You can name a playlist by writing text before the first link."></textarea>
       <button onclick="document.getElementById('loadPlaylistFile').click()">Load</button>
       <button onclick="showPlaylistChooser()">Switch Playlist</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="deleteOverlay">
+  <div class="playlist-popup">
+    <button class="close-popup" onclick="closeDeleteMenu()">✖</button>
+    <h2>Delete Manager</h2>
+    <div id="deleteContent"></div>
   </div>
 </div>
 
@@ -297,9 +322,15 @@ function showPlaylistChooser() {
     del.onclick = (e) => {
       e.stopPropagation();
       playlists.splice(i, 1);
-      savePlaylists();
-      document.body.removeChild(overlay);
-      showPlaylistChooser();
+savePlaylists();
+
+if (currentPlaylistIndex >= playlists.length) {
+  currentPlaylistIndex = Math.max(0, playlists.length - 1);
+}
+
+document.body.removeChild(overlay);
+showPlaylistChooser();
+renderPlaylist();
     };
 
     container.appendChild(btn);
@@ -474,6 +505,89 @@ function loadPlaylist(event) {
     renderPlaylist();
   };
   reader.readAsText(file);
+}
+
+function renameCurrentPlaylist() {
+  if (!playlists[currentPlaylistIndex]) {
+    alert("No playlist selected!");
+    return;
+  }
+
+  const newName = prompt("Enter new playlist name:");
+  if (!newName) return;
+
+  playlists[currentPlaylistIndex].name = newName;
+  savePlaylists();
+
+  alert("Playlist renamed!");
+}
+
+function openDeleteMenu() {
+  const overlay = document.getElementById("deleteOverlay");
+  const content = document.getElementById("deleteContent");
+
+  content.innerHTML = "";
+
+  playlists.forEach((group, i) => {
+    const section = document.createElement("div");
+    section.style.marginBottom = "1rem";
+
+    const title = document.createElement("h3");
+    title.textContent = group.name || "Untitled Playlist";
+
+    const deletePlaylistBtn = document.createElement("button");
+    deletePlaylistBtn.textContent = "Delete Playlist";
+    deletePlaylistBtn.onclick = () => {
+      playlists.splice(i, 1);
+savePlaylists();
+
+if (currentPlaylistIndex >= playlists.length) {
+  currentPlaylistIndex = Math.max(0, playlists.length - 1);
+}
+
+openDeleteMenu();
+renderPlaylist();
+    };
+
+    section.appendChild(title);
+    section.appendChild(deletePlaylistBtn);
+
+    const list = document.createElement("ul");
+
+    group.ids.forEach((vid, vi) => {
+      const li = document.createElement("li");
+      li.textContent = videoTitles[vid] || vid;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove";
+      removeBtn.style.marginLeft = "10px";
+
+      removeBtn.onclick = () => {
+        group.ids.splice(vi, 1);
+savePlaylists();
+
+if (i === currentPlaylistIndex) {
+  videoIds.length = 0;
+  videoIds.push(...group.ids);
+  renderPlaylist();
+}
+
+openDeleteMenu();
+      };
+
+      li.appendChild(removeBtn);
+      list.appendChild(li);
+    });
+
+    section.appendChild(list);
+    content.appendChild(section);
+  });
+
+  overlay.style.display = "flex";
+}
+
+function closeDeleteMenu() {
+  document.getElementById("deleteOverlay").style.display = "none";
 }
 
 document.getElementById("search-input").addEventListener("input", e => {
