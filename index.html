@@ -424,17 +424,28 @@ function renderPlaylist(){
 }
 
 // Start playlist
-function startPlaylist(){
-  if(!videoIds.length) return alert("Add videos first!");
-  const playlistToPlay=addDummy?[dummyVideoId,...videoIds]:[...videoIds];
-  const first=playlistToPlay[0], rest=playlistToPlay.slice(1).join(",");
-  const videoDiv=document.getElementById("video"); videoDiv.style.display="block";
-  const iframe=document.createElement("iframe");
-  iframe.src=`https://www.youtube.com/embed/${first}?autoplay=1&playlist=${rest}&loop=${loop?1:0}`;
-  iframe.allow="autoplay; encrypted-media"; iframe.allowFullscreen=true;
-  videoDiv.innerHTML=""; videoDiv.appendChild(iframe);
-  document.getElementById("video-controls").style.display="block";
-  document.getElementById("video-counter").textContent=`1 / ${playlistToPlay.length-1}`;
+function startPlaylist() {
+  if (!videoIds.length) return alert("Add videos first!");
+  
+  // Always add dummy at the start of the playing playlist
+  const playlistToPlay = [dummyVideoId, ...videoIds];
+  
+  const first = playlistToPlay[0];
+  const rest = playlistToPlay.slice(1).join(",");
+  
+  const videoDiv = document.getElementById("video");
+  videoDiv.style.display = "block";
+  
+  const iframe = document.createElement("iframe");
+  iframe.src = `https://www.youtube.com/embed/${first}?autoplay=1&playlist=${rest}&loop=${loop ? 1 : 0}`;
+  iframe.allow = "autoplay; encrypted-media";
+  iframe.allowFullscreen = true;
+  
+  videoDiv.innerHTML = "";
+  videoDiv.appendChild(iframe);
+  
+  document.getElementById("video-controls").style.display = "block";
+  document.getElementById("video-counter").textContent = `1 / ${playlistToPlay.length}`;
 }
 
 // Shuffle
@@ -469,7 +480,98 @@ function closeInfo(){ document.getElementById("infoOverlay").style.display="none
 // Playlist menu
 function openPlaylistMenu(){ document.getElementById("playlistOverlay").style.display="flex"; }
 function closePlaylistMenu(){ document.getElementById("playlistOverlay").style.display="none"; }
-function showPlaylistChooser(){ alert("Feature not fully implemented yet."); }
+function showPlaylistChooser() {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+  overlay.style.display = "flex";
+
+  const popup = document.createElement("div");
+  popup.className = "playlist-popup";
+  popup.innerHTML = `<button class="close-popup">✖</button><h2>Select a Playlist</h2>`;
+
+  const grid = document.createElement("div");
+  grid.className = "playlist-grid";
+
+  playlists.forEach((group, i) => {
+    const firstId = group.ids[0];
+    const title = group.name || videoTitles[firstId] || "Untitled Playlist";
+    const thumb = `https://img.youtube.com/vi/${firstId}/default.jpg`;
+
+    const container = document.createElement("div");
+    container.style.position = "relative";
+    container.style.display = "flex";
+    container.style.alignItems = "center";
+    container.style.background = "#f9f9f9";
+    container.style.border = "1px solid #ccc";
+    container.style.borderRadius = "6px";
+    container.style.padding = "0.5rem";
+
+    const btn = document.createElement("button");
+    btn.style.display = "flex";
+    btn.style.alignItems = "center";
+    btn.style.gap = "0.8rem";
+    btn.style.width = "100%";
+    btn.style.background = "transparent";
+    btn.style.border = "none";
+    btn.innerHTML = `
+      <img src="${thumb}" width="80" height="60" style="border-radius:4px;object-fit:cover;">
+      <span style="color:black;">${title}</span>
+    `;
+    btn.onclick = () => {
+      loadPlaylistGroup(i);
+      document.body.removeChild(overlay);
+    };
+
+    const del = document.createElement("button");
+    del.textContent = "✖";
+    del.className = "delete-btn";
+    del.onclick = (e) => {
+      e.stopPropagation();
+      playlists.splice(i, 1);
+      savePlaylists();
+
+      if (currentPlaylistIndex >= playlists.length) {
+        currentPlaylistIndex = Math.max(0, playlists.length - 1);
+      }
+
+      document.body.removeChild(overlay);
+      showPlaylistChooser();
+      renderPlaylist();
+    };
+
+    container.appendChild(btn);
+    container.appendChild(del);
+    grid.appendChild(container);
+  });
+
+  popup.appendChild(grid);
+
+  const playAllBtn = document.createElement("button");
+  playAllBtn.textContent = "Play All";
+  playAllBtn.style.backgroundColor = "#cc0000";
+  playAllBtn.style.color = "white";
+  playAllBtn.style.padding = "0.6rem 1rem";
+  playAllBtn.style.borderRadius = "6px";
+  playAllBtn.style.marginTop = "1rem";
+  playAllBtn.onclick = () => {
+    const allVideos = playlists.flatMap(group => group.ids);
+    const uniqueVideos = [...new Set(allVideos)];
+
+    videoIds.length = 0;
+    videoIds.push(...uniqueVideos);
+
+    renderPlaylist();
+    startPlaylist(); // dummy video prepended inside startPlaylist()
+
+    document.body.removeChild(overlay);
+  };
+
+  popup.appendChild(playAllBtn);
+
+  popup.querySelector(".close-popup").onclick = () => document.body.removeChild(overlay);
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+}
 
 // Loop toggle
 function toggleLoop(){ loop=!loop; document.getElementById("loopBtn").textContent=`Loop: ${loop?"On":"Off"}`; }
