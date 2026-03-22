@@ -34,6 +34,11 @@ li { background: #eee; padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.3re
 .active { background-color: #008000; }
 #video-controls { display: none; text-align: center; margin-top: 1rem; }
 #video-counter { margin: 0 1rem; font-weight: bold; }
+#deleteContent {
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-top: 1rem;
+}
 .overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index:1000; }
 .info-popup, .playlist-popup { background:white; padding:1.5rem 2rem; border-radius:10px; max-width:700px; width:90%; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.3); animation:fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
@@ -142,6 +147,12 @@ You can name a playlist by writing text before the first link."></textarea>
   <div class="playlist-popup">
     <button class="close-popup" onclick="closeDeleteMenu()">✖</button>
     <h2>Delete Manager</h2>
+
+<div class="toggle-buttons">
+  <button id="deletePlaylistModeBtn" onclick="setDeleteMode('playlist')" class="active">Playlists</button>
+  <button id="deleteVideoModeBtn" onclick="setDeleteMode('video')">Videos</button>
+</div>
+    
     <div id="deleteContent"></div>
   </div>
 </div>
@@ -522,36 +533,37 @@ function renameCurrentPlaylist() {
   alert("Playlist renamed!");
 }
 
-function openDeleteMenu() {
-  const overlay = document.getElementById("deleteOverlay");
-  const content = document.getElementById("deleteContent");
+playlists.forEach((group, i) => {
+  const section = document.createElement("div");
+  section.style.marginBottom = "1rem";
 
-  content.innerHTML = "";
+  const title = document.createElement("h3");
+  title.textContent = group.name || "Untitled Playlist";
 
-  playlists.forEach((group, i) => {
-    const section = document.createElement("div");
-    section.style.marginBottom = "1rem";
+  section.appendChild(title);
 
-    const title = document.createElement("h3");
-    title.textContent = group.name || "Untitled Playlist";
-
+  // 🗑 PLAYLIST MODE
+  if (deleteMode === "playlist") {
     const deletePlaylistBtn = document.createElement("button");
     deletePlaylistBtn.textContent = "Delete Playlist";
+
     deletePlaylistBtn.onclick = () => {
       playlists.splice(i, 1);
-savePlaylists();
+      savePlaylists();
 
-if (currentPlaylistIndex >= playlists.length) {
-  currentPlaylistIndex = Math.max(0, playlists.length - 1);
-}
+      if (currentPlaylistIndex >= playlists.length) {
+        currentPlaylistIndex = Math.max(0, playlists.length - 1);
+      }
 
-openDeleteMenu();
-renderPlaylist();
+      openDeleteMenu();
+      renderPlaylist();
     };
 
-    section.appendChild(title);
     section.appendChild(deletePlaylistBtn);
+  }
 
+  // 🎬 VIDEO MODE
+  if (deleteMode === "video") {
     const list = document.createElement("ul");
 
     group.ids.forEach((vid, vi) => {
@@ -564,15 +576,15 @@ renderPlaylist();
 
       removeBtn.onclick = () => {
         group.ids.splice(vi, 1);
-savePlaylists();
+        savePlaylists();
 
-if (i === currentPlaylistIndex) {
-  videoIds.length = 0;
-  videoIds.push(...group.ids);
-  renderPlaylist();
-}
+        if (i === currentPlaylistIndex) {
+          videoIds.length = 0;
+          videoIds.push(...group.ids);
+          renderPlaylist();
+        }
 
-openDeleteMenu();
+        openDeleteMenu();
       };
 
       li.appendChild(removeBtn);
@@ -580,11 +592,10 @@ openDeleteMenu();
     });
 
     section.appendChild(list);
-    content.appendChild(section);
-  });
+  }
 
-  overlay.style.display = "flex";
-}
+  content.appendChild(section);
+});
 
 function closeDeleteMenu() {
   document.getElementById("deleteOverlay").style.display = "none";
@@ -597,6 +608,16 @@ document.getElementById("search-input").addEventListener("input", e => {
     li.style.display = title.includes(val) ? "" : "none";
   });
 });
+
+  function setDeleteMode(mode) {
+  deleteMode = mode;
+
+  document.getElementById("deletePlaylistModeBtn").classList.toggle("active", mode === "playlist");
+  document.getElementById("deleteVideoModeBtn").classList.toggle("active", mode === "video");
+
+  openDeleteMenu();
+}
+  
   async function addVideoToCurrentPlaylist() {
   const url = prompt("Paste a YouTube link:");
   if (!url) return;
