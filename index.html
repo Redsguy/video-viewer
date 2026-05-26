@@ -117,6 +117,7 @@ You can name a playlist by writing text before the first link."></textarea>
       <input type="file" id="loadPlaylistFile" style="display:none" onchange="loadPlaylist(event)">
       <button onclick="document.getElementById('loadPlaylistFile').click()">Load</button>
       <button onclick="showPlaylistChooser()">Switch Playlist</button>
+      <button onclick="showEditPlaylists()">Edit Playlists</button>
     </div>
   </div>
 </div>
@@ -334,6 +335,156 @@ function showPlaylistChooser() {
   popup.appendChild(playAllBtn);
 
   popup.querySelector(".close-popup").onclick = () => document.body.removeChild(overlay);
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+}
+
+function showEditPlaylists() {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+  overlay.style.display = "flex";
+
+  const popup = document.createElement("div");
+  popup.className = "playlist-popup";
+
+  popup.innerHTML = `
+    <button class="close-popup">✖</button>
+    <h2>Edit Playlists</h2>
+  `;
+
+  const grid = document.createElement("div");
+  grid.className = "playlist-grid";
+
+  playlists.forEach((group, playlistIndex) => {
+    const firstId = group.ids[0];
+    const title = group.name || videoTitles[firstId] || "Untitled Playlist";
+
+    const container = document.createElement("div");
+    container.style.background = "#f9f9f9";
+    container.style.border = "1px solid #ccc";
+    container.style.borderRadius = "8px";
+    container.style.padding = "1rem";
+    container.style.marginBottom = "1rem";
+
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.justifyContent = "space-between";
+    header.style.alignItems = "center";
+    header.style.marginBottom = "0.8rem";
+
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = title;
+    titleSpan.style.fontWeight = "bold";
+    titleSpan.style.fontSize = "1rem";
+
+    const controls = document.createElement("div");
+
+    const renameBtn = document.createElement("button");
+    renameBtn.textContent = "Rename";
+    renameBtn.onclick = () => {
+      const newName = prompt("New playlist name:", title);
+
+      if (newName !== null) {
+        playlists[playlistIndex].name = newName.trim() || null;
+        savePlaylists();
+
+        document.body.removeChild(overlay);
+        showEditPlaylists();
+      }
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete Playlist";
+    deleteBtn.style.background = "#cc0000";
+
+    deleteBtn.onclick = () => {
+      if (!confirm(`Delete "${title}"?`)) return;
+
+      playlists.splice(playlistIndex, 1);
+      savePlaylists();
+
+      document.body.removeChild(overlay);
+      showEditPlaylists();
+    };
+
+    controls.appendChild(renameBtn);
+    controls.appendChild(deleteBtn);
+
+    header.appendChild(titleSpan);
+    header.appendChild(controls);
+
+    container.appendChild(header);
+
+    const videoList = document.createElement("div");
+
+    group.ids.forEach((videoId, videoIndex) => {
+      const row = document.createElement("div");
+
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.justifyContent = "space-between";
+      row.style.gap = "0.5rem";
+      row.style.padding = "0.4rem 0";
+      row.style.borderTop = "1px solid #ddd";
+
+      const left = document.createElement("div");
+      left.style.display = "flex";
+      left.style.alignItems = "center";
+      left.style.gap = "0.6rem";
+      left.style.overflow = "hidden";
+      left.style.flex = "1";
+
+      const thumb = document.createElement("img");
+      thumb.src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+      thumb.width = 80;
+      thumb.height = 60;
+      thumb.style.borderRadius = "4px";
+      thumb.style.objectFit = "cover";
+
+      const text = document.createElement("span");
+      text.textContent = videoTitles[videoId] || videoId;
+      text.style.whiteSpace = "nowrap";
+      text.style.overflow = "hidden";
+      text.style.textOverflow = "ellipsis";
+
+      left.appendChild(thumb);
+      left.appendChild(text);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "✖";
+      removeBtn.style.width = "40px";
+      removeBtn.style.background = "#cc0000";
+
+      removeBtn.onclick = () => {
+        playlists[playlistIndex].ids.splice(videoIndex, 1);
+
+        if (playlists[playlistIndex].ids.length === 0) {
+          playlists.splice(playlistIndex, 1);
+        }
+
+        savePlaylists();
+
+        document.body.removeChild(overlay);
+        showEditPlaylists();
+      };
+
+      row.appendChild(left);
+      row.appendChild(removeBtn);
+
+      videoList.appendChild(row);
+    });
+
+    container.appendChild(videoList);
+
+    grid.appendChild(container);
+  });
+
+  popup.appendChild(grid);
+
+  popup.querySelector(".close-popup").onclick = () => {
+    document.body.removeChild(overlay);
+  };
+
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
 }
