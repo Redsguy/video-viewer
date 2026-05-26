@@ -118,6 +118,7 @@ You can name a playlist by writing text before the first link."></textarea>
       <button onclick="document.getElementById('loadPlaylistFile').click()">Load</button>
       <button onclick="showPlaylistChooser()">Switch Playlist</button>
       <button onclick="showEditPlaylists()">Edit Playlists</button>
+      <button onclick="createPlaylist()">Add Playlist</button>
     </div>
   </div>
 </div>
@@ -334,6 +335,35 @@ function showPlaylistChooser() {
 
   popup.appendChild(playAllBtn);
 
+  const randomBtn = document.createElement("button");
+
+randomBtn.textContent = "Random";
+
+randomBtn.style.backgroundColor = "#cc0000";
+randomBtn.style.color = "white";
+randomBtn.style.padding = "0.6rem 1rem";
+randomBtn.style.borderRadius = "6px";
+randomBtn.style.marginTop = "1rem";
+randomBtn.style.marginLeft = "0.5rem";
+
+randomBtn.onclick = () => {
+
+  if (playlists.length === 0) {
+    alert("No playlists available");
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * playlists.length);
+
+  loadPlaylistGroup(randomIndex);
+
+  startPlaylist();
+
+  document.body.removeChild(overlay);
+};
+
+popup.appendChild(randomBtn);
+
   popup.querySelector(".close-popup").onclick = () => document.body.removeChild(overlay);
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
@@ -503,6 +533,43 @@ function showEditPlaylists() {
 
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
+}
+
+async function createPlaylist() {
+
+  const name = prompt("Playlist name:");
+
+  if (name === null) return;
+
+  const url = prompt("Paste the first YouTube video link:");
+
+  if (!url) return alert("You must add a video.");
+
+  const match = url.match(/(?:v=|youtu\.be\/)([\w-]{11})/);
+
+  if (!match) {
+    alert("Invalid YouTube link");
+    return;
+  }
+
+  const vid = match[1];
+
+  if (!videoTitles[vid]) {
+    videoTitles[vid] = await fetchTitle(vid);
+  }
+
+  const newPlaylist = {
+    name: name.trim() || null,
+    ids: [vid]
+  };
+
+  playlists.push(newPlaylist);
+
+  savePlaylists();
+
+  alert("Playlist created!");
+
+  showPlaylistChooser();
 }
 
 function renderPlaylist() {
