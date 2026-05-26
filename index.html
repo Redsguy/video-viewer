@@ -370,14 +370,25 @@ function showEditPlaylists() {
     header.style.display = "flex";
     header.style.justifyContent = "space-between";
     header.style.alignItems = "center";
+    header.style.gap = "0.5rem";
     header.style.marginBottom = "0.8rem";
+    header.style.flexWrap = "wrap";
 
     const titleSpan = document.createElement("span");
     titleSpan.textContent = title;
     titleSpan.style.fontWeight = "bold";
     titleSpan.style.fontSize = "1rem";
+    titleSpan.style.flex = "1";
+    titleSpan.style.minWidth = "0";
+    titleSpan.style.overflow = "hidden";
+    titleSpan.style.textOverflow = "ellipsis";
+    titleSpan.style.whiteSpace = "nowrap";
 
     const controls = document.createElement("div");
+    controls.style.display = "flex";
+    controls.style.flexWrap = "wrap";
+    controls.style.gap = "0.4rem";
+    controls.style.justifyContent = "flex-end";
 
     const renameBtn = document.createElement("button");
     renameBtn.textContent = "Rename";
@@ -426,6 +437,8 @@ function showEditPlaylists() {
       row.style.gap = "0.5rem";
       row.style.padding = "0.4rem 0";
       row.style.borderTop = "1px solid #ddd";
+      row.style.overflow = "hidden";
+      row.style.minWidth = "0";
 
       const left = document.createElement("div");
       left.style.display = "flex";
@@ -433,6 +446,7 @@ function showEditPlaylists() {
       left.style.gap = "0.6rem";
       left.style.overflow = "hidden";
       left.style.flex = "1";
+      left.style.minWidth = "0";
 
       const thumb = document.createElement("img");
       thumb.src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
@@ -446,6 +460,8 @@ function showEditPlaylists() {
       text.style.whiteSpace = "nowrap";
       text.style.overflow = "hidden";
       text.style.textOverflow = "ellipsis";
+      text.style.flex = "1";
+      text.style.minWidth = "0";
 
       left.appendChild(thumb);
       left.appendChild(text);
