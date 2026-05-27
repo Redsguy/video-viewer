@@ -502,8 +502,19 @@ function showEditPlaylists() {
         playlists[playlistIndex].name = newName.trim() || null;
         savePlaylists();
 
-        document.body.removeChild(overlay);
-        showEditPlaylists();
+        const scrollPos = grid.scrollTop;
+
+document.body.removeChild(overlay);
+
+showEditPlaylists();
+
+setTimeout(() => {
+  const newGrid = document.querySelector(".playlist-grid");
+
+  if (newGrid) {
+    newGrid.scrollTop = scrollPos;
+  }
+}, 0);
       }
     };
 
@@ -517,8 +528,19 @@ function showEditPlaylists() {
       playlists.splice(playlistIndex, 1);
       savePlaylists();
 
-      document.body.removeChild(overlay);
-      showEditPlaylists();
+      const scrollPos = grid.scrollTop;
+
+document.body.removeChild(overlay);
+
+showEditPlaylists();
+
+setTimeout(() => {
+  const newGrid = document.querySelector(".playlist-grid");
+
+  if (newGrid) {
+    newGrid.scrollTop = scrollPos;
+  }
+}, 0);
     };
 
     controls.appendChild(renameBtn);
