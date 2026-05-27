@@ -513,12 +513,24 @@ function showEditPlaylists() {
       thumb.style.objectFit = "cover";
 
       const text = document.createElement("span");
-      text.textContent = videoTitles[videoId] || videoId;
-      text.style.whiteSpace = "nowrap";
-      text.style.overflow = "hidden";
-      text.style.textOverflow = "ellipsis";
-      text.style.flex = "1";
-      text.style.minWidth = "0";
+
+const fullTitle = videoTitles[videoId] || videoId;
+
+const maxLength = 32;
+
+text.textContent =
+  fullTitle.length > maxLength
+    ? fullTitle.slice(0, maxLength) + "..."
+    : fullTitle;
+
+text.title = fullTitle;
+
+text.style.whiteSpace = "nowrap";
+text.style.overflow = "hidden";
+text.style.textOverflow = "ellipsis";
+text.style.flex = "1";
+text.style.minWidth = "0";
+text.style.maxWidth = "240px";
 
       left.appendChild(thumb);
       left.appendChild(text);
