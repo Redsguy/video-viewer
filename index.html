@@ -146,6 +146,9 @@ You can name a playlist by writing text before the first link."></textarea>
       <button onclick="showPlaylistChooser()">Switch Playlist</button>
       <button onclick="showEditPlaylists()">Edit Playlists</button>
       <button onclick="createPlaylist()">Add Playlist</button>
+      <button onclick="toggleThumbnailMode()">
+        Thumbnails: <span id="thumbModeText"></span>
+        </button>
     </div>
   </div>
 </div>
@@ -158,6 +161,8 @@ You can name a playlist by writing text before the first link."></textarea>
 
 let playlists = JSON.parse(localStorage.getItem("playlists") || "[]");
 const videoTitles = JSON.parse(localStorage.getItem("videoTitles") || "{}");
+let useCollageThumbnails =
+  JSON.parse(localStorage.getItem("useCollageThumbnails") || "true");
   
 function savePlaylists() {
   localStorage.setItem("playlists", JSON.stringify(playlists));
@@ -172,7 +177,10 @@ let currentPlaylistIndex = 0;
 
 function openInfo() { document.getElementById('infoOverlay').style.display = 'flex'; }
 function closeInfo() { document.getElementById('infoOverlay').style.display = 'none'; }
-function openPlaylistMenu() { document.getElementById('playlistOverlay').style.display = 'flex'; }
+function openPlaylistMenu() {
+  document.getElementById('playlistOverlay').style.display = 'flex';
+  updateThumbnailButton();
+}
 function closePlaylistMenu() { document.getElementById('playlistOverlay').style.display = 'none'; }
 
 function toggleLoop() {
@@ -292,8 +300,35 @@ function showPlaylistChooser() {
 
   playlists.forEach((group, i) => {
     const firstId = group.ids[0];
-    const title = group.name || videoTitles[firstId] || "Untitled Playlist";
-    const thumb = `https://img.youtube.com/vi/${firstId}/default.jpg`;
+const title = group.name || videoTitles[firstId] || "Untitled Playlist";
+
+const thumbs = useCollageThumbnails
+  ? group.ids.slice(0, 4)
+  : [group.ids[0]];
+
+const collageHTML = `
+  <div style="
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
+    width:80px;
+    height:60px;
+    gap:2px;
+    flex-shrink:0;
+  ">
+    ${thumbs.map(id => `
+      <img
+        src="https://img.youtube.com/vi/${id}/default.jpg"
+        style="
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          border-radius:2px;
+        "
+      >
+    `).join("")}
+  </div>
+`;
 
     const container = document.createElement("div");
     container.style.position = "relative";
@@ -312,9 +347,20 @@ function showPlaylistChooser() {
     btn.style.background = "transparent";
     btn.style.border = "none";
     btn.innerHTML = `
-      <img src="${thumb}" width="80" height="60" style="border-radius:4px;object-fit:cover;">
-      <span style="color:black;">${title}</span>
-    `;
+  ${collageHTML}
+
+  <span style="
+    color:black;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    flex:1;
+    min-width:0;
+    text-align:left;
+  ">
+    ${title}
+  </span>
+`;
     btn.onclick = () => {
       loadPlaylistGroup(i);
       document.body.removeChild(overlay);
@@ -611,6 +657,27 @@ async function createPlaylist() {
   alert("Playlist created!");
 
   showPlaylistChooser();
+}
+
+function toggleThumbnailMode() {
+
+  useCollageThumbnails = !useCollageThumbnails;
+
+  localStorage.setItem(
+    "useCollageThumbnails",
+    JSON.stringify(useCollageThumbnails)
+  );
+
+  updateThumbnailButton();
+}
+
+function updateThumbnailButton() {
+
+  const el = document.getElementById("thumbModeText");
+
+  if (!el) return;
+
+  el.textContent = useCollageThumbnails ? "4" : "1";
 }
 
 function renderPlaylist() {
